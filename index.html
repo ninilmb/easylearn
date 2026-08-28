@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Hub - Selectividad</title>
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-primary); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 280px; background-color: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
+        .sidebar-header h1 { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+        .subjects-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .subject-btn { width: 100%; padding: 12px; margin-bottom: 8px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .subject-btn:hover, .subject-btn.active { background: var(--accent); border-color: var(--accent); }
+
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-primary); }
+        .top-bar { padding: 15px 30px; background-color: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .mode-selector { display: flex; gap: 10px; }
+        .mode-btn { padding: 8px 16px; border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+        .mode-btn.active { background: var(--text-main); color: var(--bg-primary); font-weight: 600; }
+
+        /* Workspace Area */
+        .workspace { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; }
+        .view-section { display: none; height: 100%; flex-direction: column; }
+        .view-section.active { display: flex; }
+
+        /* Chat Layout */
+        .chat-history { flex: 1; border: 1px solid var(--border); background: var(--bg-secondary); border-radius: 12px; padding: 20px; overflow-y: auto; margin-bottom: 20px; }
+        .message { margin-bottom: 15px; padding: 12px; border-radius: 8px; max-width: 85%; line-height: 1.5; }
+        .message.user { background: var(--accent); margin-left: auto; }
+        .message.ai { background: var(--border); }
+        .chat-input-container { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); outline: none; }
+        .send-btn { padding: 0 25px; background: var(--accent); border: none; border-radius: 8px; color: white; cursor: pointer; }
+
+        /* Exam Generator Layout */
+        .exam-setup { background: var(--bg-secondary); padding: 25px; border-radius: 12px; border: 1px solid var(--border); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); }
+        .form-group select, .form-group input[type="file"] { width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-main); }
+        .gen-btn { width: 100%; padding: 15px; background: #10b981; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .exam-output { margin-top: 20px; padding: 20px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); display: none; }
+        .preview-img { max-width: 300px; max-height: 200px; margin-top: 10px; border-radius: 8px; display: none; border: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar con Asignaturas -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>🎓 AI Study Hub</h1>
+        </div>
+        <nav class="subjects-list" id="subjects-container">
+            <!-- Insertadas dinámicamente por JS -->
+        </nav>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        <header class="top-bar">
+            <h2 id="current-subject-title">Mates CCSS</h2>
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="switchMode('chat')">💬 Tutor IA</button>
+                <button class="mode-btn" onclick="switchMode('exam')">📝 Generador Exámenes</button>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <!-- Sección de Tutor IA -->
+            <section id="chat-section" class="view-section active">
+                <div class="chat-history" id="chat-history">
+                    <div class="message ai">¡Hola! Soy tu tutor experto en <span class="subject-placeholder">Mates CCSS</span>. Pregúntame cualquier duda, teoría o pídeme ejemplos resueltos paso a paso.</div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="Haz tu pregunta aquí...">
+                    <button class="send-btn" onclick="sendMessage()">Preguntar</button>
+                </div>
+            </section>
+
+            <!-- Sección de Exámenes -->
+            <section id="exam-section" class="view-section">
+                <div class="exam-setup">
+                    <div class="form-group">
+                        <label>Tipo de Prueba</label>
+                        <select id="exam-type">
+                            <option value="test">Tipo Test (Opciones múltiples)</option>
+                            <option value="desarrollo">Preguntas de Desarrollo (Teoría profunda)</option>
+                            <option value="razonamiento">Preguntas de Razonamiento / Casos Prácticos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Añadir imagen de referencia (Opcional - Ideal para diagramas o Biología)</label>
+                        <input type="file" id="exam-image" accept="image/*" onchange="previewImage(event)">
+                        <img id="image-preview" class="preview-img" alt="Vista previa">
+                    </div>
+                    <button class="gen-btn" onclick="generateExam()">Generar Examen Personalizado</button>
+                </div>
+
+                <div class="exam-output" id="exam-output">
+                    <!-- Contenido del examen autogenerado aquí -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Listado exacto de asignaturas solicitado
+        const subjects = [
+            "Mates CCSS", "Química", "Biología", "Catalán i Literatura", 
+            "Castellano y Literatura", "Inglés", "Historia de España", "Historia de la Filosofía"
+        ];
+
+        let activeSubject = subjects[0];
+        let activeMode = 'chat';
+
+        // Renderizar asignaturas en el menú lateral
+        const container = document.getElementById('subjects-container');
+        subjects.forEach((sub, index) => {
+            const btn = document.createElement('button');
+            btn.className = `subject-btn ${index === 0 ? 'active' : ''}`;
+            btn.innerHTML = `<i data-lucide="book-open" size="18"></i> ${sub}`;
+            btn.onclick = () => selectSubject(sub, btn);
+            container.appendChild(btn);
+        });
+        lucide.createIcons();
+
+        function selectSubject(subject, element) {
+            activeSubject = subject;
+            document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('current-subject-title').innerText = subject;
+            
+            // Reiniciar chat con contexto de la nueva asignatura
+            document.getElementById('chat-history').innerHTML = `
+                <div class="message ai">¡Hola! Soy tu tutor experto en <b>${subject}</b>. Pregúntame cualquier duda, teoría o pídeme ejemplos resueltos paso a paso.</div>
+            `;
+            document.getElementById('exam-output').style.display = 'none';
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('exam-image').value = '';
+        }
+
+        function switchMode(mode) {
+            activeMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if(mode === 'chat') {
+                document.getElementById('chat-section').classList.add('active');
+                document.getElementById('exam-section').classList.remove('active');
+            } else {
+                document.getElementById('exam-section').classList.add('active');
+                document.getElementById('chat-section').classList.remove('active');
+            }
+        }
+
+        // Lógica del Chat con Respuestas de la IA simulación enriquecida
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const query = input.value.trim();
+            if(!query) return;
+
+            const history = document.getElementById('chat-history');
+            
+            // Mensaje de Usuario
+            history.innerHTML += `<div class="message user">${query}</div>`;
+            input.value = '';
